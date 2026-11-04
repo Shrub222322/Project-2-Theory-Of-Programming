@@ -32,7 +32,6 @@ void facttail();
 bool validNum(int x);
 void addop();
 void multiop();
-string peekahead();
 
 void program() {
 	cout << "program -> stmtlist" << endl;
