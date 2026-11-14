@@ -4,6 +4,9 @@
 #include <sstream>
 #include <fstream>
 
+
+//	no i didnt use ai 
+//  this should handle everything including errors quite well!
 using namespace std;
 
 string END = "$$";
@@ -19,7 +22,10 @@ string currentToken;
 string oneLookahead;
 
 vector<string> tokens;
+vector<string> outputTokens;
 int globalcount = 0;
+
+bool errorFlag = false;
 
 void expr();
 void stmtlist();
@@ -32,16 +38,29 @@ void facttail();
 bool validNum(int x);
 void addop();
 void multiop();
-string peekahead();
 
 void program() {
 	cout << "program -> stmtlist" << endl;
+	outputTokens.push_back("program -> stmtlist");
 	if (!validID(globalcount))
 		return;
 	stmtlist();
 	if (tokens.at(globalcount) == END) {
 		cout << "End Of File $$" << endl;
-		return;
+		if (errorFlag)
+		{
+			cout << "Errors encountered during parsing" << endl;
+			outputTokens.push_back("End Of File $$");
+			outputTokens.push_back("Parsing Completed but encountered Errors");
+			return;
+		}
+		else
+		{
+			cout << "Parsing Complete Successfully" << endl;
+			outputTokens.push_back("End Of File $$");
+			outputTokens.push_back("Parsing Complete Successfully");
+			return;
+		}
 	}
 	
 
@@ -54,33 +73,42 @@ void stmtlist() {
 }
 void stmt() {
 	cout << "stmtlist -> stmt stmtlist | ϵ" << endl;
+	outputTokens.push_back("stmtlist -> stmt stmtlist | ϵ");
 	if (tokens.at(globalcount) == "read"){
 		// this is an id so we just take it in and consume it.
-		cout << "Consuming id: " << tokens.at(globalcount) << endl;
+		cout << "Consuming read: " << tokens.at(globalcount) << endl;
+		outputTokens.push_back("Consuming read: " + tokens.at(globalcount));
 		globalcount++;
 		if (validID(globalcount))
 		{
 			cout << "Consuming " << tokens.at(globalcount) << endl;
+			outputTokens.push_back("Consuming " + tokens.at(globalcount));
 			globalcount++;
 		}
 		else
 		{
+			outputTokens.push_back("Error: Invalid ID at STMT");
 			cout << "Invalid ID";
+			errorFlag = true;
 		}
 	}
 	else if (tokens.at(globalcount) == "write") {
 		cout << "stmt -> write expr" << endl;
+		outputTokens.push_back("stmt -> write expr");
 		cout << "Consuming write: " << tokens.at(globalcount) << endl;
+		outputTokens.push_back("Consuming write: " + tokens.at(globalcount));
 		globalcount++;
 		expr(); // id := expr | read id | write expr
 	}
 	else if (validID(globalcount)) // an id
 	{
 		cout << "Consuming " << tokens.at(globalcount) << endl;
+		outputTokens.push_back("Consuming " + tokens.at(globalcount));
 		globalcount++;
 		if (tokens.at(globalcount) == opAssign)
 		{
 			cout << "Consuming " << tokens.at(globalcount) << endl;
+			outputTokens.push_back("Consuming " + tokens.at(globalcount));
 			globalcount++;
 			expr();
 		}
@@ -88,13 +116,16 @@ void stmt() {
 	}
 	else if (!validID(globalcount)){
 		cout << "Error: Invalid ID at STMT" << endl;
+		outputTokens.push_back("Error: Invalid ID at STMT");
+		errorFlag = true;
 		return;
 	}
 }
 
 void expr() {
 	cout << "expr -> term termtail" << endl;
-	
+	outputTokens.push_back("expr -> term termtail");
+
 	term();
 
 	termtail();
@@ -112,6 +143,7 @@ void expr() {
 }
 void term() {
 	cout << "term -> factor fact tail" << endl;
+	outputTokens.push_back("term -> factor fact tail");
 	factor();
 	facttail();
 }
@@ -119,6 +151,7 @@ void termtail()
 {
 	if (tokens.size() != globalcount && ((tokens.at(globalcount) == opAdd) || tokens.at(globalcount) == opSub)) {
 		cout << "termtail -> add op term term tail | ϵ" << endl;
+		outputTokens.push_back("termtail -> add op term term tail | ϵ");
 		addop();
 		term();
 		if (tokens.size() != globalcount && ((tokens.at(globalcount) == opAdd) || tokens.at(globalcount) == opSub))
@@ -132,26 +165,32 @@ void termtail()
 }
 void factor() {
 	cout << "factor -> ( expr ) | id | number" << endl;
+	outputTokens.push_back("factor -> ( expr ) | id | number");
 	if (tokens.at(globalcount) == "(")
 	{
 		cout << "Consuming " << tokens.at(globalcount) << endl;
+		outputTokens.push_back("Consuming " + tokens.at(globalcount));
 		globalcount++;
 		expr();
 
 		if (tokens.at(globalcount) == ")")
 		{
 			cout << "Consuming " << tokens.at(globalcount) << endl;
+			outputTokens.push_back("Consuming " + tokens.at(globalcount));
 			globalcount++;
 			//return;
 		}
 		else
 		{
 			cout << "Expecting )" << endl;
+			outputTokens.push_back("Expecting )");
+			errorFlag = true;
 		}
 	}
 	else if (validID(globalcount))
 	{
 		cout << "Consuming " << tokens.at(globalcount) << endl;
+		outputTokens.push_back("Consuming " + tokens.at(globalcount));
 		globalcount++;
 		//return;
 
@@ -159,12 +198,15 @@ void factor() {
 	else if (validNum(globalcount))
 	{
 		cout << "Consuming " << tokens.at(globalcount) << endl;
+		outputTokens.push_back("Consuming " + tokens.at(globalcount));
 		globalcount++;
 		//return;
 	}
 	else
 	{
 		cout << "ERROR at factor"  << endl;
+		outputTokens.push_back("ERROR at factor");
+		errorFlag = true;
 		//return;
 	}
 
@@ -174,6 +216,7 @@ void facttail()
 {
 	if (tokens.size() != globalcount && ((tokens.at(globalcount) == opMulti) || (tokens.at(globalcount) == opDiv))) {
 		cout << "fact tail -> mult op factor fact tail | ϵ" << endl;
+		outputTokens.push_back("fact tail -> mult op factor fact tail | ϵ");
 		multiop();
 		factor();
 		if (tokens.size() != globalcount && ((tokens.at(globalcount) == opMulti) || (tokens.at(globalcount) == opDiv)))
@@ -190,23 +233,32 @@ void addop() {
 	if (tokens.at(globalcount) == opAdd || tokens.at(globalcount) == opSub)
 	{
 		cout << "Consuming " << tokens.at(globalcount) << endl;
+		outputTokens.push_back("Consuming " + tokens.at(globalcount));
 		globalcount++;
 		return;
 	}
 	else
+	{
 		cout << "Error at addop" << endl;
+		outputTokens.push_back("Error at addop");
+		errorFlag = true;
+	}
 	// plus or minus
 }
 void multiop() {
 	if (tokens.at(globalcount) == opMulti || tokens.at(globalcount) == opDiv)
 	{
 		cout << "Consuming " << tokens.at(globalcount) << endl;
+		outputTokens.push_back("Consuming " + tokens.at(globalcount));
 		globalcount++;
 		return;
 
 	}
-	else
+	else {
 		cout << "Error at multiop" << endl;
+		outputTokens.push_back("Error at multiop");
+		errorFlag = true;
+	}
 	// times or divide
 }
 
@@ -262,6 +314,16 @@ int main() {
 	//while (tokens.size() != globalcount && (validID(globalcount)))
 	//{
 		program();
+		ofstream output("output.txt");
+		if (!output) {
+			cout << "Error opening output file." << endl;
+			return 1;
+		}
+		//output << "Output Tokens:" << endl;
+		for (const string& token : outputTokens) {
+			output << token << endl;
+		}
+
 	//}
 	//for (const string& token : tokens) {
 	//	cout << token << endl;

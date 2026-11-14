@@ -1,0 +1,53 @@
+program -> stmtlist
+stmtlist -> stmt stmtlist | ?
+Consuming read: read
+Consuming A
+stmtlist -> stmt stmtlist | ?
+Consuming read: read
+Consuming B
+stmtlist -> stmt stmtlist | ?
+Consuming sum
+Consuming :=
+expr -> term termtail
+term -> factor fact tail
+factor -> ( expr ) | id | number
+Consuming (
+expr -> term termtail
+term -> factor fact tail
+factor -> ( expr ) | id | number
+Consuming A
+termtail -> add op term term tail | ?
+Consuming +
+term -> factor fact tail
+factor -> ( expr ) | id | number
+Consuming B
+Consuming )
+fact tail -> mult op factor fact tail | ?
+Consuming *
+factor -> ( expr ) | id | number
+Consuming 45.325
+stmtlist -> stmt stmtlist | ?
+stmt -> write expr
+Consuming write: write
+expr -> term termtail
+term -> factor fact tail
+factor -> ( expr ) | id | number
+Consuming sum
+stmtlist -> stmt stmtlist | ?
+stmt -> write expr
+Consuming write: write
+expr -> term termtail
+term -> factor fact tail
+factor -> ( expr ) | id | number
+Consuming sum
+fact tail -> mult op factor fact tail | ?
+Consuming *
+factor -> ( expr ) | id | number
+Consuming 80.777
+termtail -> add op term term tail | ?
+Consuming -
+term -> factor fact tail
+factor -> ( expr ) | id | number
+Consuming A
+End Of File $$
+Parsing Complete Successfully
